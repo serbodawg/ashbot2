@@ -59,7 +59,14 @@ class FunCog(commands.Cog):
         )
         reply = await ask_ai(
             system,
-            [{"role": "user", "content": f"Ship {user1.display_name} and {user2.display_name}"}],
+            [{
+                "role": "user",
+                "content": (
+                    f"User {interaction.user.display_name} wants to ship "
+                    f"{user1.display_name} and {user2.display_name}. "
+                    f"Mention who did the shipping at the start."
+                ),
+            }],
         )
         await interaction.followup.send(reply)
 
