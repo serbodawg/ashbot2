@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 from typing import Optional
 
@@ -14,6 +15,12 @@ from config import DASHBOARD_SECRET, DASHBOARD_HOST, DASHBOARD_PORT, BASE_DIR
 from ashbot.models import database as db
 
 log = logging.getLogger("ashbot.dashboard")
+
+# Run a discord.py coroutine in the bot's event loop from a thread
+def _run_discord(coro):
+    bot = get_bot()
+    fut = asyncio.run_coroutine_threadsafe(coro, bot.loop)
+    return fut.result()
 
 app = FastAPI(title="AshBot 2 Dashboard")
 
@@ -208,9 +215,9 @@ async def api_kick(guild_id: int, request: Request, secret: str = "") -> JSONRes
         uid = int(user_id)
         member = guild.get_member(uid)
         if member:
-            await member.kick(reason=reason)
+            _run_discord(member.kick(reason=reason))
         else:
-            await guild.kick(discord.Object(id=uid), reason=reason)
+            _run_discord(guild.kick(discord.Object(id=uid), reason=reason))
         return JSONResponse({"success": True, "action": "kick", "user_id": uid, "reason": reason})
     except Exception as e:
         log.error("Kick error: %s", e)
@@ -236,7 +243,7 @@ async def api_ban(guild_id: int, request: Request, secret: str = "") -> JSONResp
 
     try:
         uid = int(user_id)
-        await guild.ban(discord.Object(id=uid), reason=reason, delete_message_days=delete_days)
+        _run_discord(guild.ban(discord.Object(id=uid), reason=reason, delete_message_days=delete_days))
         return JSONResponse({"success": True, "action": "ban", "user_id": uid, "reason": reason})
     except Exception as e:
         log.error("Ban error: %s", e)
@@ -259,8 +266,8 @@ async def api_unban(guild_id: int, request: Request, secret: str = "") -> JSONRe
 
     try:
         uid = int(user_id)
-        user = await bot.fetch_user(uid)
-        await guild.unban(user)
+        user = _run_discord(bot.fetch_user(uid))
+        _run_discord(guild.unban(user))
         return JSONResponse({"success": True, "action": "unban", "user_id": uid})
     except Exception as e:
         log.error("Unban error: %s", e)
@@ -363,11 +370,11 @@ async def api_create_channel(guild_id: int, request: Request, secret: str = "") 
             category = guild.get_channel(int(category_id))
 
         if ch_type == "voice":
-            channel = await guild.create_voice_channel(name, category=category)
+            channel = _run_discord(guild.create_voice_channel(name, category=category))
         elif ch_type == "forum":
-            channel = await guild.create_forum(name, category=category)
+            channel = _run_discord(guild.create_forum(name, category=category))
         else:
-            channel = await guild.create_text_channel(name, category=category, topic=topic)
+            channel = _run_discord(guild.create_text_channel(name, category=category, topic=topic))
 
         return JSONResponse({"success": True, "channel": {"id": channel.id, "name": channel.name}})
     except Exception as e:
@@ -394,7 +401,7 @@ async def api_rename_channel(guild_id: int, channel_id: int, request: Request, s
         raise HTTPException(404, "Channel not found")
 
     try:
-        await channel.edit(name=name)
+        _run_discord(channel.edit(name=name))
         return JSONResponse({"success": True, "channel": {"id": channel.id, "name": name}})
     except Exception as e:
         log.error("Rename channel error: %s", e)
@@ -416,7 +423,7 @@ async def api_delete_channel(guild_id: int, channel_id: int, secret: str = "") -
 
     try:
         name = channel.name
-        await channel.delete()
+        _run_discord(channel.delete())
         return JSONResponse({"success": True, "deleted": name})
     except Exception as e:
         log.error("Delete channel error: %s", e)
