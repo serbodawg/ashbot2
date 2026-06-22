@@ -6,6 +6,7 @@ from collections import defaultdict
 import discord
 from discord import app_commands
 from discord.ext import commands
+import google.generativeai as genai
 
 from ashbot.models import database as db
 from config import AI_API_KEY, AI_MODEL
@@ -15,42 +16,37 @@ log = logging.getLogger("ashbot.ai")
 CHAT_CONTEXT: dict[int, dict[int, list[dict]]] = defaultdict(lambda: defaultdict(list))
 MAX_CONTEXT = 20
 
+genai.configure(api_key=AI_API_KEY) if AI_API_KEY else None
+
+
+def _to_gemini_history(messages: list[dict]) -> list[dict]:
+    history = []
+    for m in messages:
+        role = "model" if m["role"] == "assistant" else "user"
+        history.append({"role": role, "parts": [m["content"]]})
+    return history
+
 
 async def ask_ai(system_prompt: str, messages: list[dict]) -> str:
     if not AI_API_KEY:
         return "AI module is not configured. Set AI_API_KEY in .env to enable."
 
     try:
-        import httpx
+        model = genai.GenerativeModel(
+            model_name=AI_MODEL,
+            system_instruction=system_prompt,
+        )
 
-        headers = {
-            "Authorization": f"Bearer {AI_API_KEY}",
-            "Content-Type": "application/json",
-        }
+        history = _to_gemini_history(messages[:-1]) if len(messages) > 1 else []
+        last_msg = messages[-1]["content"] if messages else "Hello"
 
-        payload = {
-            "model": AI_MODEL,
-            "messages": [{"role": "system", "content": system_prompt}, *messages],
-            "max_tokens": 500,
-        }
+        if history:
+            chat = model.start_chat(history=history)
+            resp = await chat.send_message_async(last_msg)
+        else:
+            resp = await model.generate_content_async(last_msg)
 
-        async with httpx.AsyncClient(timeout=30) as client:
-            if AI_API_KEY.startswith("sk-"):
-                resp = await client.post(
-                    "https://api.openai.com/v1/chat/completions",
-                    json=payload,
-                    headers=headers,
-                )
-            else:
-                resp = await client.post(
-                    f"{AI_API_KEY}/v1/chat/completions",
-                    json=payload,
-                    headers={"Content-Type": "application/json"},
-                )
-
-            resp.raise_for_status()
-            data = resp.json()
-            return data["choices"][0]["message"]["content"]
+        return resp.text.strip()
     except Exception as e:
         log.error("AI request failed: %s", e)
         return "Sorry, I couldn't process that request right now."
