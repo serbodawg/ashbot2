@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 import time
 from collections import defaultdict, deque
@@ -16,6 +17,7 @@ log = logging.getLogger("ashbot.ai")
 
 CHAT_CONTEXT: dict[int, dict[int, list[dict]]] = defaultdict(lambda: defaultdict(list))
 MAX_CONTEXT = 20
+_running_tasks: dict[tuple[int, int], asyncio.Task] = {}
 
 _client = genai.Client(api_key=AI_API_KEY) if AI_API_KEY else None
 if _client:
@@ -24,7 +26,7 @@ if _client:
 # Rate limit tracking for /how-much
 _req_timestamps: deque[float] = deque()  # rolling 60s window
 _req_today: int = 0
-_today_date: int = 0  # date.today().toordinal()
+_today_date: int = 0
 RPM_LIMIT = 30
 RPD_LIMIT = 1000
 
@@ -54,6 +56,24 @@ def _to_gemini_history(messages: list[dict]) -> list[genai.types.Content]:
         role = "model" if m["role"] == "assistant" else m["role"]
         contents.append({"role": role, "parts": [m["content"]]})
     return contents
+
+
+def _build_server_context(guild: discord.Guild | None) -> str:
+    if not guild:
+        return ""
+    lines = [f"Serwer: {guild.name}"]
+    if guild.member_count:
+        lines.append(f"Użytkownicy: ~{guild.member_count}")
+    txt_channels = [c.name for c in guild.text_channels][:20]
+    if txt_channels:
+        lines.append("Kanały tekstowe: #" + ", #".join(txt_channels))
+    voice_channels = [c.name for c in guild.voice_channels][:10]
+    if voice_channels:
+        lines.append("Kanały głosowe: " + ", ".join(voice_channels))
+    roles = [r.mention for r in guild.roles if not r.is_default()][:15]
+    if roles:
+        lines.append("Role: " + ", ".join(roles))
+    return "\n".join(lines)
 
 
 async def ask_ai(system_prompt: str, messages: list[dict]) -> str:
@@ -101,30 +121,64 @@ class AICog(commands.Cog):
         if message.content.startswith(("/", "!")):
             return
 
-        async with message.channel.typing():
-            ctx = CHAT_CONTEXT[message.guild.id][message.channel.id]
-            ctx.append({"role": "user", "content": message.content})
-            if len(ctx) > MAX_CONTEXT:
-                ctx[:] = ctx[-MAX_CONTEXT:]
+        key = (message.guild.id, message.channel.id)
+        old = _running_tasks.get(key)
+        if old and not old.done():
+            old.cancel()
 
-            system = (
-                "You are AshBot 2, a helpful Discord assistant. "
-                "Answer concisely and helpfully. Keep responses under 400 characters."
-            )
-            reply = await ask_ai(system, ctx)
-            ctx.append({"role": "model", "content": reply})
-            if len(ctx) > MAX_CONTEXT:
-                ctx[:] = ctx[-MAX_CONTEXT:]
+        async def _respond():
+            async with message.channel.typing():
+                ctx = CHAT_CONTEXT[message.guild.id][message.channel.id]
+                ctx.append({"role": "user", "content": message.content})
+                if len(ctx) > MAX_CONTEXT:
+                    ctx[:] = ctx[-MAX_CONTEXT:]
 
-            await message.reply(reply)
+                ctx_str = _build_server_context(message.guild)
+                system = (
+                    "You are AshBot 2, a helpful Discord assistant.\n"
+                    "Answer concisely and helpfully. Keep responses under 400 characters.\n"
+                    f"Informacje o serwerze:\n{ctx_str}"
+                )
+                reply = await ask_ai(system, ctx)
+                ctx.append({"role": "model", "content": reply})
+                if len(ctx) > MAX_CONTEXT:
+                    ctx[:] = ctx[-MAX_CONTEXT:]
+
+                await message.reply(reply)
+
+        task = asyncio.create_task(_respond())
+        _running_tasks[key] = task
+        try:
+            await task
+        except asyncio.CancelledError:
+            await message.reply("⏹ Odpowiedź anulowana.")
+        finally:
+            if _running_tasks.get(key) is task:
+                del _running_tasks[key]
 
     @app_commands.command(name="ask")
     @app_commands.describe(question="Your question")
     async def ask(self, interaction: discord.Interaction, question: str) -> None:
         await interaction.response.defer()
-        system = "You are AshBot 2, a helpful assistant. Answer clearly and concisely."
+        ctx_str = _build_server_context(interaction.guild)
+        system = (
+            "You are AshBot 2, a helpful assistant.\n"
+            "Answer clearly and concisely. Udzielaj odpowiedzi po polsku.\n"
+            "You can see everything on the server and answer questions about it.\n"
+            f"Informacje o serwerze:\n{ctx_str}"
+        )
         reply = await ask_ai(system, [{"role": "user", "content": question}])
         await interaction.followup.send(reply)
+
+    @app_commands.command(name="cancel")
+    async def cancel(self, interaction: discord.Interaction) -> None:
+        key = (interaction.guild.id, interaction.channel.id)
+        task = _running_tasks.get(key)
+        if task and not task.done():
+            task.cancel()
+            await interaction.response.send_message("⏹ Anulowano odpowiedź AI.")
+        else:
+            await interaction.response.send_message("Brak aktywnej odpowiedzi AI do anulowania.", ephemeral=True)
 
     @app_commands.command(name="how-much")
     async def how_much(self, interaction: discord.Interaction) -> None:
