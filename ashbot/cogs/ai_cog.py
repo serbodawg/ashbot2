@@ -128,7 +128,7 @@ class AICog(commands.Cog):
             old.cancel()
 
         _nostalgia_counter[key] += 1
-        is_nostalgic = _nostalgia_counter[key] % 6 == 0
+        is_nostalgic = _nostalgia_counter[key] % 10 == 0
 
         async def _respond():
             async with message.channel.typing():
