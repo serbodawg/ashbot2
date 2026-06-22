@@ -21,7 +21,7 @@ SUPABASE_URL: str = os.getenv("SUPABASE_URL", "https://slckcmnewrenyedvjgmv.supa
 SUPABASE_SERVICE_ROLE_KEY: str = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
 
 AI_API_KEY: str = os.getenv("AI_API_KEY", "")
-AI_MODEL: str = os.getenv("AI_MODEL", "gemini-2.5-flash-lite")
+AI_MODEL: str = os.getenv("AI_MODEL", "llama-3.3-70b-versatile")
 
 DASHBOARD_SECRET: str = os.getenv("DASHBOARD_SECRET", "change-me")
 DASHBOARD_HOST: str = os.getenv("DASHBOARD_HOST", "0.0.0.0")

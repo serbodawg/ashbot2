@@ -8,7 +8,7 @@ from collections import defaultdict, deque
 import discord
 from discord import app_commands
 from discord.ext import commands
-from google import genai
+from openai import AsyncOpenAI
 
 from ashbot.models import database as db
 from config import AI_API_KEY, AI_MODEL
@@ -20,16 +20,16 @@ MAX_CONTEXT = 20
 _running_tasks: dict[tuple[int, int], asyncio.Task] = {}
 _nostalgia_counter: dict[tuple[int, int], int] = defaultdict(int)
 
-_client = genai.Client(api_key=AI_API_KEY) if AI_API_KEY else None
+_client = AsyncOpenAI(api_key=AI_API_KEY, base_url="https://api.groq.com/openai/v1") if AI_API_KEY else None
 if _client:
-    log.info("Gemini AI client initialized (model: %s)", AI_MODEL)
+    log.info("Groq AI client initialized (model: %s)", AI_MODEL)
 
 # Rate limit tracking for /how-much
-_req_timestamps: deque[float] = deque()  # rolling 60s window
+_req_timestamps: deque[float] = deque()
 _req_today: int = 0
 _today_date: int = 0
 RPM_LIMIT = 30
-RPD_LIMIT = 1000
+RPD_LIMIT = 14400
 
 
 def _track_request() -> None:
@@ -49,14 +49,6 @@ def _track_request() -> None:
 
     _req_timestamps.append(now)
     _req_today += 1
-
-
-def _to_gemini_history(messages: list[dict]) -> list[genai.types.Content]:
-    contents = []
-    for m in messages:
-        role = "model" if m["role"] == "assistant" else m["role"]
-        contents.append({"role": role, "parts": [m["content"]]})
-    return contents
 
 
 def _build_server_context(guild: discord.Guild | None) -> str:
@@ -83,26 +75,24 @@ async def ask_ai(system_prompt: str, messages: list[dict]) -> str:
 
     _track_request()
     try:
-        config = genai.types.GenerateContentConfig(system_instruction=system_prompt)
-        history = _to_gemini_history(messages[:-1]) if len(messages) > 1 else None
-        last_msg = messages[-1]["content"] if messages else "Hello"
+        groq_messages = [{"role": "system", "content": system_prompt}]
+        for m in messages:
+            role = "assistant" if m["role"] == "model" else m["role"]
+            groq_messages.append({"role": role, "content": m["content"]})
 
-        if history:
-            chat = _client.aio.chats.create(model=AI_MODEL, history=history, config=config)
-            resp = await chat.send_message(last_msg)
-        else:
-            resp = await _client.aio.models.generate_content(
-                model=AI_MODEL, contents=last_msg, config=config
-            )
-
-        text = resp.text
+        resp = await _client.chat.completions.create(
+            model=AI_MODEL,
+            messages=groq_messages,
+            max_tokens=400,
+        )
+        text = resp.choices[0].message.content
         return text.strip() if text else "(empty response)"
     except Exception as e:
         err = str(e)
         log.error("AI request failed: %s", err)
-        if "RESOURCE_EXHAUSTED" in err or "quota" in err.lower() or "503" in err:
-            return "AI quota exceeded on free tier. Please wait a moment and try again."
-        return "Sorry, I couldn't process that request right now."
+        if "rate" in err.lower() or "429" in err or "quota" in err.lower():
+            return "AI quota exceeded na free tier. Poczekaj chwilę i spróbuj ponownie."
+        return "ups, coś poszło nie tak xD"
 
 
 @app_commands.guild_only()
