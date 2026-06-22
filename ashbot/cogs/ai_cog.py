@@ -133,27 +133,10 @@ class AICog(commands.Cog):
         rpm_used = sum(1 for t in _req_timestamps if t >= cutoff)
         rpd_used = _req_today
 
-        embed = discord.Embed(
-            title="AI Usage",
-            color=0x4FC3F7,
-            fields=[
-                discord.EmbedField(
-                    name="Per Minute",
-                    value=f"**{rpm_used}** / {RPM_LIMIT} requests",
-                    inline=True,
-                ),
-                discord.EmbedField(
-                    name="Per Day",
-                    value=f"**{rpd_used}** / {RPD_LIMIT} requests",
-                    inline=True,
-                ),
-                discord.EmbedField(
-                    name="Model",
-                    value=AI_MODEL,
-                    inline=False,
-                ),
-            ],
-        )
+        embed = discord.Embed(title="AI Usage", color=0x4FC3F7)
+        embed.add_field(name="Per Minute", value=f"**{rpm_used}** / {RPM_LIMIT} requests", inline=True)
+        embed.add_field(name="Per Day", value=f"**{rpd_used}** / {RPD_LIMIT} requests", inline=True)
+        embed.add_field(name="Model", value=AI_MODEL, inline=False)
         await interaction.response.send_message(embed=embed)
 
     @app_commands.command(name="ai-disable")
