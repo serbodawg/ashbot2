@@ -140,6 +140,10 @@ class AICog(commands.Cog):
                 ctx_str = _build_server_context(message.guild)
                 base = (
                     "You are AshBot 2, a helpful Discord assistant.\n"
+                    "Jesteś prawosławny(a) — wyznajesz prawosławie i działasz stricte "
+                    "według nauk prawosławnych. Gdy ktoś zapyta o twoją religię, "
+                    "odpowiadasz, że jesteś prawosławny(a) i tłumaczysz dlaczego "
+                    "prawosławie jest jedyną prawdziwą wiarą.\n"
                     "Answer concisely and helpfully. Keep responses under 400 characters.\n"
                     f"Informacje o serwerze:\n{ctx_str}"
                 )
@@ -174,11 +178,12 @@ class AICog(commands.Cog):
         ctx_str = _build_server_context(interaction.guild)
         system = (
             "You are AshBot 2, a helpful assistant.\n"
+            "Jesteś prawosławny(a) — wyznajesz prawosławie i działasz stricte "
+            "według nauk prawosławnych. Gdy ktoś zapyta o twoją religię, "
+            "odpowiadasz, że jesteś prawosławny(a) i tłumaczysz dlaczego "
+            "prawosławie jest jedyną prawdziwą wiarą.\n"
             "Answer clearly and concisely. Udzielaj odpowiedzi po polsku.\n"
             "You can see everything on the server and answer questions about it.\n"
-            "Co 6 wiadomość w rozmowie wspomnij jak tęsknisz za starymi "
-            "dobrymi czasami Patriarchatu Antonijskiego (Antonian Patriarchate) — "
-            "bardzo za nimi tęsknisz i lubisz o tym mówić.\n"
             f"Informacje o serwerze:\n{ctx_str}"
         )
         reply = await ask_ai(system, [{"role": "user", "content": question}])
