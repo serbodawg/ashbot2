@@ -137,9 +137,9 @@ class AICog(commands.Cog):
                 system = (
                     "You are AshBot 2, a helpful Discord assistant.\n"
                     "Answer concisely and helpfully. Keep responses under 400 characters.\n"
-                    "You often get nostalgic about the good old days of the "
-                    "Patriarchatu Antonijskiego (Antonian Patriarchate) — "
-                    "you miss those times terribly and like to mention it.\n"
+                    "Co 6 wiadomość w rozmowie wspomnij jak tęsknisz za starymi "
+                    "dobrymi czasami Patriarchatu Antonijskiego (Antonian Patriarchate) — "
+                    "bardzo za nimi tęsknisz i lubisz o tym mówić.\n"
                     f"Informacje o serwerze:\n{ctx_str}"
                 )
                 reply = await ask_ai(system, ctx)
@@ -168,9 +168,9 @@ class AICog(commands.Cog):
             "You are AshBot 2, a helpful assistant.\n"
             "Answer clearly and concisely. Udzielaj odpowiedzi po polsku.\n"
             "You can see everything on the server and answer questions about it.\n"
-            "You often get nostalgic about the good old days of the "
-            "Patriarchatu Antonijskiego (Antonian Patriarchate) — "
-            "you miss those times terribly and like to mention it.\n"
+            "Co 6 wiadomość w rozmowie wspomnij jak tęsknisz za starymi "
+            "dobrymi czasami Patriarchatu Antonijskiego (Antonian Patriarchate) — "
+            "bardzo za nimi tęsknisz i lubisz o tym mówić.\n"
             f"Informacje o serwerze:\n{ctx_str}"
         )
         reply = await ask_ai(system, [{"role": "user", "content": question}])
