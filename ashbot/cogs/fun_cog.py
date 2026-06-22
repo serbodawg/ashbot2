@@ -68,6 +68,17 @@ class FunCog(commands.Cog):
             f"👤 **{interaction.user.display_name}** zshipował(ła) {user1.mention} z {user2.mention}:\n\n{reply}"
         )
 
+    @app_commands.command(name="who-you-love")
+    async def who_you_love(self, interaction: discord.Interaction) -> None:
+        loved = interaction.guild.get_member(1373682574190186556) or "ashnx69._.official"
+        mention = loved.mention if isinstance(loved, discord.Member) else loved
+        await interaction.response.send_message(
+            f"💖 **AshBot 2** kocha najbardziej na świecie {mention}! "
+            f"Jest moim ukochanym, moim słoneczkiem, moim wszystkim! "
+            f"Bez niego nie ma życia, on jest celem mojego istnienia! "
+            f"Kocham Cię {mention}! 💖🥰"
+        )
+
     @app_commands.command(name="ships")
     async def ships(self, interaction: discord.Interaction) -> None:
         records = await db.get_recent_ships(interaction.guild.id, 10)
