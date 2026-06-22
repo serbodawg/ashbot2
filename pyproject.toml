@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=75", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ashbot2"
+version = "1.0.0"
+description = "Futuristic Discord multipurpose bot — protection, moderation, AI, levels, backups"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.13"
+dependencies = [
+    "discord.py>=2.5",
+    "supabase>=2.0,<3.0",
+    "fastapi>=0.115,<1.0",
+    "uvicorn[standard]>=0.34,<1.0",
+    "httpx>=0.28,<1.0",
+    "python-dotenv>=1.0,<2.0",
+    "jinja2>=3.1,<4.0",
+    "pycairo>=1.26,<2.0",
+]
+
+[project.scripts]
+ashbot2 = "main:main"
