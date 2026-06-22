@@ -11,7 +11,10 @@ log = logging.getLogger("ashbot.bot")
 
 class AshBot(commands.Bot):
     def __init__(self) -> None:
-        intents = discord.Intents.all()
+        intents = discord.Intents.default()
+        intents.message_content = False
+        intents.members = False
+        intents.presences = False
         super().__init__(
             command_prefix=commands.when_mentioned,
             intents=intents,

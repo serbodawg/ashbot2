@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ guild.name }} — AshBot 2 Dashboard</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #0a0a1a;
+    color: #e0e0ff;
+    min-height: 100vh;
+  }
+  .header {
+    background: linear-gradient(135deg, #0a1628, #1a1a3e);
+    padding: 16px 40px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    border-bottom: 1px solid #2a2a5e;
+  }
+  .header a { color: #4fc3f7; text-decoration: none; font-size: 14px; }
+  .header a:hover { text-decoration: underline; }
+  .header h1 { font-size: 20px; }
+  .server-banner {
+    background: linear-gradient(135deg, #12122a, #1a1a3e);
+    padding: 24px 40px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    border-bottom: 1px solid #2a2a5e;
+  }
+  .server-icon {
+    width: 64px; height: 64px; border-radius: 50%;
+    background: linear-gradient(135deg, #4fc3f7, #7c4dff);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px; font-weight: 700; color: white;
+    flex-shrink: 0;
+    overflow: hidden;
+  }
+  .server-icon img { width: 100%; height: 100%; object-fit: cover; }
+  .server-info h2 { font-size: 22px; font-weight: 700; }
+  .server-info .meta { font-size: 13px; color: #8888aa; margin-top: 4px; }
+  .tabs {
+    display: flex; gap: 0; padding: 0 40px;
+    background: #0d0d22;
+    border-bottom: 1px solid #2a2a5e;
+  }
+  .tab-btn {
+    padding: 12px 24px;
+    background: transparent;
+    border: none;
+    color: #8888aa;
+    font-size: 14px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+  }
+  .tab-btn:hover { color: #e0e0ff; }
+  .tab-btn.active { color: #4fc3f7; border-bottom-color: #4fc3f7; }
+  .tab-content { display: none; padding: 24px 40px; }
+  .tab-content.active { display: block; }
+  .card {
+    background: linear-gradient(135deg, #12122a, #1a1a3e);
+    border: 1px solid #2a2a5e;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  .card h3 { font-size: 16px; margin-bottom: 12px; color: #aaaacc; }
+  .stat-row { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
+  .stat-box {
+    background: linear-gradient(135deg, #12122a, #1a1a3e);
+    border: 1px solid #2a2a5e;
+    border-radius: 10px;
+    padding: 16px 24px;
+    text-align: center;
+    flex: 1;
+    min-width: 120px;
+  }
+  .stat-box .num { font-size: 28px; font-weight: 700; color: #4fc3f7; }
+  .stat-box .lbl { font-size: 12px; color: #8888aa; margin-top: 4px; }
+  .ch-list, .role-list { display: flex; flex-direction: column; gap: 4px; }
+  .ch-item, .role-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 10px; border-radius: 6px;
+    font-size: 13px; color: #c0c0dd;
+  }
+  .ch-item:hover, .role-item:hover { background: rgba(255,255,255,0.03); }
+  .ch-icon { width: 16px; text-align: center; color: #6666aa; flex-shrink: 0; }
+  .role-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { padding: 8px 12px; text-align: left; border-bottom: 1px solid #1a1a3e; }
+  th { color: #8888aa; font-weight: 600; }
+  .form-group { margin-bottom: 12px; }
+  .form-group label { display: block; font-size: 13px; color: #aaaacc; margin-bottom: 4px; }
+  .form-group input, .form-group select, .form-group textarea {
+    width: 100%; padding: 8px 12px;
+    background: #0d0d22; border: 1px solid #2a2a5e; border-radius: 6px;
+    color: #e0e0ff; font-size: 14px;
+  }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+    outline: none; border-color: #4fc3f7;
+  }
+  .form-group textarea { resize: vertical; min-height: 60px; }
+  .btn {
+    padding: 8px 20px; border: none; border-radius: 6px;
+    font-size: 14px; cursor: pointer; font-weight: 600;
+    transition: all 0.2s;
+  }
+  .btn-primary { background: linear-gradient(135deg, #4fc3f7, #7c4dff); color: white; }
+  .btn-primary:hover { opacity: 0.9; }
+  .btn-danger { background: linear-gradient(135deg, #ef4444, #dc2626); color: white; }
+  .btn-danger:hover { opacity: 0.9; }
+  .btn-success { background: linear-gradient(135deg, #22c55e, #16a34a); color: white; }
+  .btn-success:hover { opacity: 0.9; }
+  .btn-sm { padding: 4px 12px; font-size: 12px; }
+  .msg {
+    padding: 10px 16px; border-radius: 8px; margin-bottom: 12px;
+    font-size: 13px; display: none;
+  }
+  .msg.success { display: block; background: rgba(34,197,94,0.1); border: 1px solid #22c55e; color: #86efac; }
+  .msg.error { display: block; background: rgba(239,68,68,0.1); border: 1px solid #ef4444; color: #fca5a5; }
+  .inline-form { display: flex; gap: 8px; align-items: flex-end; }
+  .inline-form .form-group { flex: 1; margin-bottom: 0; }
+  .warn-item { padding: 8px 0; border-bottom: 1px solid #1a1a3e; font-size: 13px; }
+  .warn-item:last-child { border-bottom: none; }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 4px;
+    font-size: 11px; font-weight: 600;
+  }
+  .badge-mod { background: rgba(79,195,247,0.15); color: #4fc3f7; }
+  .badge-role { background: rgba(124,77,255,0.15); color: #b794f4; }
+  .empty-state { text-align: center; padding: 32px; color: #555577; font-size: 14px; }
+  @media (max-width: 768px) {
+    .tabs, .tab-content, .header, .server-banner { padding-left: 16px; padding-right: 16px; }
+    .tab-btn { padding: 10px 14px; font-size: 13px; }
+  }
+</style>
+</head>
+<body>
+<div class="header">
+  <a href="/?secret={{ request.query_params.secret }}">&larr; Back</a>
+  <h1>AshBot 2 Dashboard</h1>
+</div>
+
+<div class="server-banner">
+  <div class="server-icon">
+    {% if guild.icon %}<img src="{{ guild.icon }}">{% else %}{{ guild.name[:1] }}{% endif %}
+  </div>
+  <div class="server-info">
+    <h2>{{ guild.name }}</h2>
+    <div class="meta">ID: {{ guild.id }} &middot; Created: {{ guild.created_at[:10] }}</div>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab-btn active" data-tab="overview">Overview</button>
+  <button class="tab-btn" data-tab="moderation">Moderation</button>
+  <button class="tab-btn" data-tab="warnings">Warnings</button>
+  <button class="tab-btn" data-tab="settings">Settings</button>
+  <button class="tab-btn" data-tab="channels">Channels</button>
+  <button class="tab-btn" data-tab="levels">Levels</button>
+</div>
+
+<div id="tab-overview" class="tab-content active">
+  <div class="stat-row">
+    <div class="stat-box"><div class="num">{{ guild.members }}</div><div class="lbl">Members</div></div>
+    <div class="stat-box"><div class="num">{{ guild.channels|length }}</div><div class="lbl">Channels</div></div>
+    <div class="stat-box"><div class="num">{{ guild.roles|length }}</div><div class="lbl">Roles</div></div>
+  </div>
+  <div class="card">
+    <h3>Server Roles</h3>
+    <div class="role-list">
+      {% for r in guild.roles if not r.is_default %}
+      <div class="role-item">
+        <span class="role-dot" style="background:#{{ r.color or '6666aa' }}"></span>
+        {{ r.name }}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<div id="tab-moderation" class="tab-content">
+  <div class="msg" id="mod-msg"></div>
+
+  <div class="card">
+    <h3>Kick Member</h3>
+    <div class="inline-form">
+      <div class="form-group">
+        <label>User ID *</label>
+        <input type="text" id="kick-user" placeholder="123456789012345678">
+      </div>
+      <div class="form-group">
+        <label>Reason</label>
+        <input type="text" id="kick-reason" placeholder="Optional">
+      </div>
+      <button class="btn btn-danger" onclick="doModAction('kick')">Kick</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Ban Member</h3>
+    <div class="inline-form">
+      <div class="form-group">
+        <label>User ID *</label>
+        <input type="text" id="ban-user" placeholder="123456789012345678">
+      </div>
+      <div class="form-group">
+        <label>Reason</label>
+        <input type="text" id="ban-reason" placeholder="Optional">
+      </div>
+      <div class="form-group">
+        <label>Delete days</label>
+        <input type="number" id="ban-days" value="0" min="0" max="7" style="width:70px">
+      </div>
+      <button class="btn btn-danger" onclick="doModAction('ban')">Ban</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Unban User</h3>
+    <div class="inline-form">
+      <div class="form-group">
+        <label>User ID *</label>
+        <input type="text" id="unban-user" placeholder="123456789012345678">
+      </div>
+      <button class="btn btn-success" onclick="doModAction('unban')">Unban</button>
+    </div>
+  </div>
+</div>
+
+<div id="tab-warnings" class="tab-content">
+  <div class="msg" id="warn-msg"></div>
+
+  <div class="card">
+    <h3>Add Warning</h3>
+    <div class="inline-form">
+      <div class="form-group">
+        <label>User ID *</label>
+        <input type="text" id="warn-user" placeholder="123456789012345678">
+      </div>
+      <div class="form-group">
+        <label>Reason</label>
+        <input type="text" id="warn-reason" placeholder="Reason for warning">
+      </div>
+      <button class="btn btn-primary" onclick="doWarn()">Warn</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Lookup Warnings</h3>
+    <div class="inline-form">
+      <div class="form-group">
+        <label>User ID</label>
+        <input type="text" id="lookup-user" placeholder="123456789012345678">
+      </div>
+      <button class="btn btn-primary" onclick="doLookupWarnings()">Lookup</button>
+    </div>
+    <div id="warn-list" style="margin-top:12px"></div>
+  </div>
+</div>
+
+<div id="tab-settings" class="tab-content">
+  <div class="msg" id="settings-msg"></div>
+  <div class="card">
+    <h3>Bot Configuration</h3>
+    <div id="config-display" class="empty-state">Loading...</div>
+  </div>
+</div>
+
+<div id="tab-channels" class="tab-content">
+  <div class="card">
+    <h3>Channels ({{ guild.channels|length }})</h3>
+    <div class="ch-list">
+      {% for ch in guild.channels|sort(attribute='position') %}
+      <div class="ch-item">
+        <span class="ch-icon">
+          {%- if 'text' in ch.type %}#
+          {%- elif 'voice' in ch.type %}&#127908;
+          {%- elif 'category' in ch.type %}&#128193;
+          {%- elif 'forum' in ch.type %}&#128172;
+          {%- else %}&#128279;
+          {%- endif -%}
+        </span>
+        {{ ch.name }}
+        {%- if ch.topic %} <span style="color:#555577;font-size:11px;margin-left:8px">&mdash; {{ ch.topic[:60] }}</span>{% endif %}
+        {%- if 'voice' in ch.type %} <span style="color:#555577;font-size:11px;margin-left:8px">(voice)</span>{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<div id="tab-levels" class="tab-content">
+  <div class="card">
+    <h3>Leaderboard</h3>
+    <div id="levels-display" class="empty-state">Loading...</div>
+  </div>
+</div>
+
+<script>
+const SECRET = new URLSearchParams(location.search).get("secret");
+const GUILD_ID = {{ guild.id }};
+const API = `/api/server/${GUILD_ID}`;
+
+// Tab switching
+document.querySelectorAll(".tab-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+    document.querySelectorAll(".tab-content").forEach(t => t.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById("tab-" + btn.dataset.tab).classList.add("active");
+    if (btn.dataset.tab === "settings") loadSettings();
+    if (btn.dataset.tab === "levels") loadLevels();
+  });
+});
+
+// Fetch helper
+async function api(path, opts = {}) {
+  const url = `${API}${path}${path.includes("?") ? "&" : "?"}secret=${SECRET}`;
+  const res = await fetch(url, {
+    headers: { "Content-Type": "application/json", ...opts.headers },
+    ...opts,
+  });
+  return res.json();
+}
+
+function showMsg(id, type, text) {
+  const el = document.getElementById(id);
+  el.className = "msg " + type;
+  el.textContent = text;
+  el.style.display = "block";
+  setTimeout(() => el.style.display = "none", 5000);
+}
+
+// Moderation actions
+async function doModAction(action) {
+  const userKey = { kick: "kick-user", ban: "ban-user", unban: "unban-user" }[action];
+  const reasonKey = { kick: "kick-reason", ban: "ban-reason", unban: null }[action];
+  const daysKey = { ban: "ban-days" }[action];
+
+  const user_id = document.getElementById(userKey).value.trim();
+  if (!user_id) { showMsg("mod-msg", "error", "User ID is required"); return; }
+
+  const body = { user_id };
+  if (reasonKey) body.reason = document.getElementById(reasonKey).value.trim() || `${action}ed from dashboard`;
+  if (daysKey) body.delete_days = parseInt(document.getElementById(daysKey).value) || 0;
+
+  const data = await api(`/${action}`, { method: "POST", body: JSON.stringify(body) });
+  if (data.success) {
+    showMsg("mod-msg", "success", `${action.charAt(0).toUpperCase() + action.slice(1)} successful (user ${user_id})`);
+    if (userKey) document.getElementById(userKey).value = "";
+    if (reasonKey && document.getElementById(reasonKey)) document.getElementById(reasonKey).value = "";
+  } else {
+    showMsg("mod-msg", "error", data.error || `${action} failed`);
+  }
+}
+
+// Warn
+async function doWarn() {
+  const user_id = document.getElementById("warn-user").value.trim();
+  const reason = document.getElementById("warn-reason").value.trim() || "No reason";
+  if (!user_id) { showMsg("warn-msg", "error", "User ID is required"); return; }
+
+  const data = await api("/warn", { method: "POST", body: JSON.stringify({ user_id, reason }) });
+  if (data.success) {
+    showMsg("warn-msg", "success", `Warned user ${user_id} (total: ${data.total_warnings})`);
+    document.getElementById("warn-user").value = "";
+    document.getElementById("warn-reason").value = "";
+  } else {
+    showMsg("warn-msg", "error", data.error || "Warn failed");
+  }
+}
+
+// Lookup warnings
+async function doLookupWarnings() {
+  const user_id = document.getElementById("lookup-user").value.trim();
+  if (!user_id) { showMsg("warn-msg", "error", "User ID is required"); return; }
+
+  const data = await api(`/warnings?user_id=${user_id}`);
+  const container = document.getElementById("warn-list");
+  if (!data || data.length === 0) {
+    container.innerHTML = '<div class="empty-state">No warnings for this user</div>';
+  } else {
+    let html = `<table><tr><th>#</th><th>Reason</th><th>Moderator</th><th>Date</th></tr>`;
+    data.forEach((w, i) => {
+      const date = w.created_at ? w.created_at.slice(0, 16).replace("T", " ") : "unknown";
+      html += `<tr><td>${i+1}</td><td>${w.reason || "—"}</td><td><code>${w.moderator_id || "—"}</code></td><td>${date}</td></tr>`;
+    });
+    html += `</table>`;
+    container.innerHTML = html;
+  }
+}
+
+// Settings
+async function loadSettings() {
+  const container = document.getElementById("config-display");
+  const data = await api("/settings");
+  if (data && data.config) {
+    let html = `<table><tr><th>Setting</th><th>Value</th></tr>`;
+    for (const [key, val] of Object.entries(data.config)) {
+      if (key === "guild_id") continue;
+      const display = val === true ? '<span style="color:#22c55e">enabled</span>' :
+                      val === false ? '<span style="color:#ef4444">disabled</span>' :
+                      val ?? '<span style="color:#555577">—</span>';
+      html += `<tr><td>${key}</td><td>${display}</td></tr>`;
+    }
+    html += `</table>`;
+    if (data.log_channels && Object.keys(data.log_channels).length > 0) {
+      html += `<h4 style="margin-top:16px;color:#aaaacc;font-size:14px">Log Channels</h4><table><tr><th>Type</th><th>Channel ID</th></tr>`;
+      for (const [type, chId] of Object.entries(data.log_channels)) {
+        html += `<tr><td>${type}</td><td><code>${chId}</code></td></tr>`;
+      }
+      html += `</table>`;
+    }
+    container.innerHTML = html;
+  } else {
+    container.innerHTML = '<div class="empty-state">No configuration found</div>';
+  }
+}
+
+// Levels
+async function loadLevels() {
+  const container = document.getElementById("levels-display");
+  const data = await api("/levels?limit=10");
+  if (data && data.length > 0) {
+    let html = `<table><tr><th>#</th><th>User ID</th><th>Level</th><th>XP</th></tr>`;
+    data.forEach((entry, i) => {
+      html += `<tr><td>${i+1}</td><td><code>${entry.user_id}</code></td><td>${entry.level}</td><td>${entry.xp}</td></tr>`;
+    });
+    html += `</table>`;
+    container.innerHTML = html;
+  } else {
+    container.innerHTML = '<div class="empty-state">No level data yet</div>';
+  }
+}
+
+// Load levels if tab is active on page load
+if (document.getElementById("tab-levels").classList.contains("active")) loadLevels();
+</script>
+</body>
+</html>

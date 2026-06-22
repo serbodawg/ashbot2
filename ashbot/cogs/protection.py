@@ -138,12 +138,12 @@ class ProtectionCog(commands.Cog):
 
     # --- Commands ---
 
-    bot_group = app_commands.Group(name="bot", description="Bot whitelist management")
+    whitelist_grp = app_commands.Group(name="bot", description="Bot whitelist management")
 
-    @bot_group.command(name="whitelist-add")
+    @whitelist_grp.command(name="whitelist-add")
     @admin_only()
     @app_commands.describe(bot_id="Bot user ID to whitelist")
-    async def bot_whitelist_add(self, interaction: discord.Interaction, bot_id: str) -> None:
+    async def add_to_whitelist(self, interaction: discord.Interaction, bot_id: str) -> None:
         try:
             uid = int(bot_id)
             await db.add_bot_whitelist(interaction.guild.id, uid)
@@ -151,10 +151,10 @@ class ProtectionCog(commands.Cog):
         except ValueError:
             await interaction.response.send_message("Invalid ID")
 
-    @bot_group.command(name="whitelist-remove")
+    @whitelist_grp.command(name="whitelist-remove")
     @admin_only()
     @app_commands.describe(bot_id="Bot user ID to remove from whitelist")
-    async def bot_whitelist_remove(self, interaction: discord.Interaction, bot_id: str) -> None:
+    async def remove_from_whitelist(self, interaction: discord.Interaction, bot_id: str) -> None:
         try:
             uid = int(bot_id)
             await db.remove_bot_whitelist(interaction.guild.id, uid)

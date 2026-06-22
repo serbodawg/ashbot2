@@ -28,10 +28,10 @@ def serialize_guild(guild: discord.Guild) -> dict:
                 "position": ch.position,
                 "overwrites": {
                     str(target_id): {
-                        "allow": pair[0].value,
-                        "deny": pair[1].value,
+                        "allow": overwrite.pair()[0].value,
+                        "deny": overwrite.pair()[1].value,
                     }
-                    for target_id, pair in ch.overwrites.items()
+                    for target_id, overwrite in ch.overwrites.items()
                 },
             }
             channels.append(ch_data)

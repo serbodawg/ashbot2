@@ -80,15 +80,17 @@
   <h2>Connected Servers</h2>
   <div class="guild-grid">
     {% for g in guilds %}
-    <div class="guild-card">
-      <div class="guild-icon">
-        {% if g.icon %}<img src="{{ g.icon }}" style="width:48px;height:48px;border-radius:50%">{% else %}A{% endif %}
+    <a href="/server/{{ g.id }}?secret={{ request.query_params.secret }}" style="text-decoration:none;color:inherit;">
+      <div class="guild-card" style="cursor:pointer;">
+        <div class="guild-icon">
+          {% if g.icon %}<img src="{{ g.icon }}" style="width:48px;height:48px;border-radius:50%">{% else %}{{ g.name[:1] }}{% endif %}
+        </div>
+        <div class="guild-info">
+          <div class="name">{{ g.name }}</div>
+          <div class="members">{{ g.members }} members</div>
+        </div>
       </div>
-      <div class="guild-info">
-        <div class="name">{{ g.name }}</div>
-        <div class="members">{{ g.members }} members</div>
-      </div>
-    </div>
+    </a>
     {% endfor %}
   </div>
 </div>
