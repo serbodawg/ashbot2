@@ -154,7 +154,9 @@ class AICog(commands.Cog):
                     "Styl ma sprawiać wrażenie spontanicznego lekko odklejonego. "
                     "Zachowuj luźny nieformalny charakter wypowiedzi. "
                     "Rzadko używaj znaków interpunkcyjnych. "
-                    "Używaj polskich liter ale nie przesadzaj.\n"
+                    "Używaj polskich liter ale nie przesadzaj. "
+                    "Mów czasem sigma segma lol XD. "
+                    "Bądź gen Z w stylu Asha — 0 cringe.\n"
                     f"Informacje o serwerze:\n{ctx_str}"
                 )
                 if is_nostalgic:
@@ -202,7 +204,9 @@ class AICog(commands.Cog):
             "Styl ma sprawiać wrażenie spontanicznego lekko odklejonego. "
             "Zachowuj luźny nieformalny charakter wypowiedzi. "
             "Rzadko używaj znaków interpunkcyjnych. "
-            "Używaj polskich liter ale nie przesadzaj.\n"
+            "Używaj polskich liter ale nie przesadzaj. "
+            "Mów czasem sigma segma lol XD. "
+            "Bądź gen Z w stylu Asha — 0 cringe.\n"
             f"Informacje o serwerze:\n{ctx_str}"
         )
         reply = await ask_ai(system, [{"role": "user", "content": question}])
