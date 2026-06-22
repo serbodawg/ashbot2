@@ -272,11 +272,36 @@
 </div>
 
 <div id="tab-channels" class="tab-content">
+  <div class="msg" id="ch-msg"></div>
+
+  <div class="card">
+    <h3>Create Channel</h3>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:end">
+      <div class="form-group" style="flex:2;min-width:140px">
+        <label>Name *</label>
+        <input type="text" id="ch-name" placeholder="new-channel">
+      </div>
+      <div class="form-group" style="flex:1;min-width:100px">
+        <label>Type</label>
+        <select id="ch-type">
+          <option value="text">Text</option>
+          <option value="voice">Voice</option>
+          <option value="forum">Forum</option>
+        </select>
+      </div>
+      <div class="form-group" style="flex:1;min-width:100px">
+        <label>Topic (text)</label>
+        <input type="text" id="ch-topic" placeholder="Optional">
+      </div>
+      <button class="btn btn-success" onclick="doCreateChannel()">Create</button>
+    </div>
+  </div>
+
   <div class="card">
     <h3>Channels ({{ guild.channels|length }})</h3>
     <div class="ch-list">
       {% for ch in guild.channels|sort(attribute='position') %}
-      <div class="ch-item">
+      <div class="ch-item" id="ch-row-{{ ch.id }}">
         <span class="ch-icon">
           {%- if 'text' in ch.type %}#
           {%- elif 'voice' in ch.type %}&#127908;
@@ -285,9 +310,20 @@
           {%- else %}&#128279;
           {%- endif -%}
         </span>
-        {{ ch.name }}
-        {%- if ch.topic %} <span style="color:#555577;font-size:11px;margin-left:8px">&mdash; {{ ch.topic[:60] }}</span>{% endif %}
+        <span class="ch-name" id="ch-name-{{ ch.id }}">{{ ch.name }}</span>
+        {%- if ch.topic %} <span style="color:#555577;font-size:11px;margin-left:8px">&mdash; {{ ch.topic[:40] }}</span>{% endif %}
         {%- if 'voice' in ch.type %} <span style="color:#555577;font-size:11px;margin-left:8px">(voice)</span>{% endif %}
+        <span style="margin-left:auto;display:flex;gap:4px">
+          <button class="btn btn-sm btn-primary" onclick="toggleRename({{ ch.id }})" style="font-size:11px">Rename</button>
+          <button class="btn btn-sm btn-danger" onclick="doDeleteChannel({{ ch.id }})" style="font-size:11px">Delete</button>
+        </span>
+      </div>
+      <div id="ch-rename-{{ ch.id }}" style="display:none;padding:4px 10px 8px 24px" class="inline-form">
+        <div class="form-group" style="margin:0;flex:1">
+          <input type="text" id="ch-rename-input-{{ ch.id }}" value="{{ ch.name }}" style="padding:4px 8px;font-size:13px">
+        </div>
+        <button class="btn btn-sm btn-success" onclick="doRenameChannel({{ ch.id }})" style="font-size:11px">Save</button>
+        <button class="btn btn-sm" onclick="toggleRename({{ ch.id }})" style="font-size:11px;background:#333;color:#ccc">Cancel</button>
       </div>
       {% endfor %}
     </div>
@@ -435,6 +471,63 @@ async function loadLevels() {
     container.innerHTML = html;
   } else {
     container.innerHTML = '<div class="empty-state">No level data yet</div>';
+  }
+}
+
+// --- Channel management ---
+
+function toggleRename(id) {
+  const row = document.getElementById("ch-rename-" + id);
+  const shown = row.style.display !== "none";
+  row.style.display = shown ? "none" : "flex";
+  if (!shown) document.getElementById("ch-rename-input-" + id).focus();
+}
+
+async function doRenameChannel(id) {
+  const input = document.getElementById("ch-rename-input-" + id);
+  const name = input.value.trim();
+  if (!name) return;
+
+  const data = await api(`/channels/${id}/rename`, {
+    method: "POST", body: JSON.stringify({ name })
+  });
+  if (data.success) {
+    document.getElementById("ch-name-" + id).textContent = name;
+    document.getElementById("ch-rename-" + id).style.display = "none";
+    showMsg("ch-msg", "success", `Renamed to #${name}`);
+  } else {
+    showMsg("ch-msg", "error", data.error || "Rename failed");
+  }
+}
+
+async function doDeleteChannel(id) {
+  if (!confirm("Delete this channel?")) return;
+  const data = await api(`/channels/${id}`, { method: "DELETE" });
+  if (data.success) {
+    document.getElementById("ch-row-" + id).style.display = "none";
+    document.getElementById("ch-rename-" + id).style.display = "none";
+    showMsg("ch-msg", "success", `Deleted #${data.deleted}`);
+  } else {
+    showMsg("ch-msg", "error", data.error || "Delete failed");
+  }
+}
+
+async function doCreateChannel() {
+  const name = document.getElementById("ch-name").value.trim();
+  const type = document.getElementById("ch-type").value;
+  const topic = document.getElementById("ch-topic").value.trim();
+  if (!name) { showMsg("ch-msg", "error", "Channel name required"); return; }
+
+  const data = await api("/channels/create", {
+    method: "POST", body: JSON.stringify({ name, type, topic })
+  });
+  if (data.success) {
+    showMsg("ch-msg", "success", `Created #${name}`);
+    document.getElementById("ch-name").value = "";
+    document.getElementById("ch-topic").value = "";
+    setTimeout(() => location.reload(), 1500);
+  } else {
+    showMsg("ch-msg", "error", data.error || "Create failed");
   }
 }
 

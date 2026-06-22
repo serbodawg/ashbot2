@@ -337,6 +337,92 @@ async def api_backups(guild_id: int, secret: str = "") -> JSONResponse:
         return JSONResponse({"success": False, "error": str(e)}, status_code=500)
 
 
+# --- Channel management ---
+
+@app.post("/api/server/{guild_id}/channels/create")
+async def api_create_channel(guild_id: int, request: Request, secret: str = "") -> JSONResponse:
+    if secret != DASHBOARD_SECRET:
+        raise HTTPException(403, "Invalid secret")
+    bot = get_bot()
+    guild = bot.get_guild(guild_id)
+    if guild is None:
+        raise HTTPException(404, "Server not found")
+
+    body = await request.json()
+    name = body.get("name")
+    ch_type = body.get("type", "text")
+    category_id = body.get("category_id")
+    topic = body.get("topic", "")
+
+    if not name:
+        raise HTTPException(400, "name is required")
+
+    try:
+        category = None
+        if category_id:
+            category = guild.get_channel(int(category_id))
+
+        if ch_type == "voice":
+            channel = await guild.create_voice_channel(name, category=category)
+        elif ch_type == "forum":
+            channel = await guild.create_forum(name, category=category)
+        else:
+            channel = await guild.create_text_channel(name, category=category, topic=topic)
+
+        return JSONResponse({"success": True, "channel": {"id": channel.id, "name": channel.name}})
+    except Exception as e:
+        log.error("Create channel error: %s", e)
+        return JSONResponse({"success": False, "error": str(e)}, status_code=500)
+
+
+@app.post("/api/server/{guild_id}/channels/{channel_id}/rename")
+async def api_rename_channel(guild_id: int, channel_id: int, request: Request, secret: str = "") -> JSONResponse:
+    if secret != DASHBOARD_SECRET:
+        raise HTTPException(403, "Invalid secret")
+    bot = get_bot()
+    guild = bot.get_guild(guild_id)
+    if guild is None:
+        raise HTTPException(404, "Server not found")
+
+    body = await request.json()
+    name = body.get("name")
+    if not name:
+        raise HTTPException(400, "name is required")
+
+    channel = guild.get_channel(channel_id)
+    if channel is None:
+        raise HTTPException(404, "Channel not found")
+
+    try:
+        await channel.edit(name=name)
+        return JSONResponse({"success": True, "channel": {"id": channel.id, "name": name}})
+    except Exception as e:
+        log.error("Rename channel error: %s", e)
+        return JSONResponse({"success": False, "error": str(e)}, status_code=500)
+
+
+@app.delete("/api/server/{guild_id}/channels/{channel_id}")
+async def api_delete_channel(guild_id: int, channel_id: int, secret: str = "") -> JSONResponse:
+    if secret != DASHBOARD_SECRET:
+        raise HTTPException(403, "Invalid secret")
+    bot = get_bot()
+    guild = bot.get_guild(guild_id)
+    if guild is None:
+        raise HTTPException(404, "Server not found")
+
+    channel = guild.get_channel(channel_id)
+    if channel is None:
+        raise HTTPException(404, "Channel not found")
+
+    try:
+        name = channel.name
+        await channel.delete()
+        return JSONResponse({"success": True, "deleted": name})
+    except Exception as e:
+        log.error("Delete channel error: %s", e)
+        return JSONResponse({"success": False, "error": str(e)}, status_code=500)
+
+
 @app.get("/api/stats")
 async def api_stats(secret: str = "") -> JSONResponse:
     if secret != DASHBOARD_SECRET:
