@@ -208,6 +208,20 @@ class AICog(commands.Cog):
         await db.set_ai_channel(interaction.guild.id, channel.id, True)
         await interaction.response.send_message(f"AI enabled in {channel.mention}")
 
+    @app_commands.command(name="ai-list")
+    async def ai_list(self, interaction: discord.Interaction) -> None:
+        channels = await db.get_ai_channels(interaction.guild.id)
+        if not channels:
+            await interaction.response.send_message("AI nie jest włączone na żadnym kanale.")
+            return
+        lines = []
+        for cid in channels:
+            ch = interaction.guild.get_channel(cid)
+            lines.append(f"• {ch.mention if ch else f'<#{cid}>'}")
+        await interaction.response.send_message(
+            f"AI włączone na:\n" + "\n".join(lines)
+        )
+
 
 async def setup(bot: commands.Bot) -> None:
     await bot.add_cog(AICog(bot))
