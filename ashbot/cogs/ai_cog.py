@@ -46,9 +46,13 @@ async def ask_ai(system_prompt: str, messages: list[dict]) -> str:
                 model=AI_MODEL, contents=last_msg, config=config
             )
 
-        return resp.text.strip()
+        text = resp.text
+        return text.strip() if text else "(empty response)"
     except Exception as e:
-        log.error("AI request failed: %s", e)
+        err = str(e)
+        log.error("AI request failed: %s", err)
+        if "RESOURCE_EXHAUSTED" in err or "quota" in err.lower() or "503" in err:
+            return "AI quota exceeded on free tier. Please wait a moment and try again."
         return "Sorry, I couldn't process that request right now."
 
 
