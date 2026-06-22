@@ -17,7 +17,7 @@ for d in (DATA_DIR, LOGS_DIR, BACKUPS_DIR):
 
 DISCORD_TOKEN: str = os.getenv("DISCORD_TOKEN", "")
 
-SUPABASE_URL: str = os.getenv("SUPABASE_URL", "https://nuyuvrxxhwpnilijkotv.supabase.co")
+SUPABASE_URL: str = os.getenv("SUPABASE_URL", "https://slckcmnewrenyedvjgmv.supabase.co")
 SUPABASE_SERVICE_ROLE_KEY: str = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
 
 AI_API_KEY: str = os.getenv("AI_API_KEY", "")
