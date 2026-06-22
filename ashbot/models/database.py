@@ -151,6 +151,25 @@ async def delete_advice(advice_id: int) -> bool:
     return len(resp.data) > 0
 
 
+# --- Ships ---
+
+async def add_ship(guild_id: int, shipper_id: int, user1_id: int, user2_id: int, ship_name: str = "") -> None:
+    db = get_db()
+    db.table("ashbot_ships").insert({
+        "guild_id": guild_id,
+        "shipper_id": shipper_id,
+        "user1_id": user1_id,
+        "user2_id": user2_id,
+        "ship_name": ship_name,
+    }).execute()
+
+
+async def get_recent_ships(guild_id: int, limit: int = 10) -> list[dict]:
+    db = get_db()
+    resp = db.table("ashbot_ships").select("*").eq("guild_id", guild_id).order("created_at", desc=True).limit(limit).execute()
+    return resp.data
+
+
 # --- Bot whitelist/blacklist ---
 
 async def get_bot_whitelist(guild_id: int) -> list[int]:

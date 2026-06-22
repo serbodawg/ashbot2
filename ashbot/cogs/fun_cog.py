@@ -7,6 +7,7 @@ from discord import app_commands
 from discord.ext import commands
 
 from ashbot.cogs.ai_cog import ask_ai
+from ashbot.models import database as db
 
 log = logging.getLogger("ashbot.fun")
 
@@ -59,16 +60,38 @@ class FunCog(commands.Cog):
         )
         reply = await ask_ai(
             system,
-            [{
-                "role": "user",
-                "content": (
-                    f"User {interaction.user.display_name} wants to ship "
-                    f"{user1.display_name} and {user2.display_name}. "
-                    f"Mention who did the shipping at the start."
-                ),
-            }],
+            [{"role": "user", "content": f"Ship {user1.display_name} and {user2.display_name}"}],
         )
-        await interaction.followup.send(reply)
+        ship_name = reply.split("**Ship name:**")[-1].split("\n")[0].strip().rstrip("*") if "**Ship name:**" in reply else ""
+        await db.add_ship(interaction.guild.id, interaction.user.id, user1.id, user2.id, ship_name)
+        await interaction.followup.send(
+            f"👤 **{interaction.user.display_name}** zshipował(ła) {user1.mention} z {user2.mention}:\n\n{reply}"
+        )
+
+    @app_commands.command(name="ships")
+    async def ships(self, interaction: discord.Interaction) -> None:
+        records = await db.get_recent_ships(interaction.guild.id, 10)
+        if not records:
+            await interaction.response.send_message("Brak shipów na tym serwerze.")
+            return
+
+        lines = []
+        for r in records:
+            u1 = interaction.guild.get_member(r["user1_id"])
+            u2 = interaction.guild.get_member(r["user2_id"])
+            shipper = interaction.guild.get_member(r["shipper_id"])
+            n1 = u1.display_name if u1 else f"<@{r['user1_id']}>"
+            n2 = u2.display_name if u2 else f"<@{r['user2_id']}>"
+            ns = shipper.display_name if shipper else f"<@{r['shipper_id']}>"
+            name = f" — **{r['ship_name']}**" if r["ship_name"] else ""
+            lines.append(f"• {ns} zshipował(ła) {n1} x {n2}{name}")
+
+        embed = discord.Embed(
+            title="🚢 Ostatnie shipy",
+            description="\n".join(lines),
+            color=0xFF69B4,
+        )
+        await interaction.response.send_message(embed=embed)
 
 
 async def setup(bot: commands.Bot) -> None:

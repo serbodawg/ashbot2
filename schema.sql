@@ -82,7 +82,18 @@ RETURNS TEXT
 LANGUAGE sql
 AS $$ SELECT text FROM ashbot_advice ORDER BY RANDOM() LIMIT 1; $$;
 
+CREATE TABLE IF NOT EXISTS ashbot_ships (
+  id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+  guild_id BIGINT NOT NULL,
+  shipper_id BIGINT NOT NULL,
+  user1_id BIGINT NOT NULL,
+  user2_id BIGINT NOT NULL,
+  ship_name TEXT DEFAULT '',
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- Indexes
 CREATE INDEX IF NOT EXISTS idx_ashbot_warnings_guild ON ashbot_warnings(guild_id, user_id);
 CREATE INDEX IF NOT EXISTS idx_ashbot_levels_guild ON ashbot_levels(guild_id, xp DESC);
 CREATE INDEX IF NOT EXISTS idx_ashbot_backups_guild ON ashbot_backups(guild_id);
+CREATE INDEX IF NOT EXISTS idx_ashbot_ships_guild ON ashbot_ships(guild_id, created_at DESC);

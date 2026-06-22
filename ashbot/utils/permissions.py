@@ -28,10 +28,33 @@ async def is_owner(interaction: discord.Interaction) -> bool:
 
 def admin_only():
     async def predicate(interaction: discord.Interaction) -> bool:
-        if not await is_admin(interaction):
-            await interaction.response.send_message("You need Administrator permission to use this command.", ephemeral=True)
+        if not isinstance(interaction.user, discord.Member):
             return False
-        return True
+        guild = interaction.guild
+        if not guild:
+            return False
+        # Server owner always passes
+        if guild.owner_id == interaction.user.id:
+            return True
+        # Check role hierarchy: top 3 highest roles (excluding @everyone)
+        sorted_roles = sorted(
+            [r for r in guild.roles if not r.is_default()],
+            key=lambda r: r.position,
+            reverse=True,
+        )
+        top_positions = [r.position for r in sorted_roles[:3]]
+        if not top_positions:
+            await interaction.response.send_message(
+                "No high enough role found.", ephemeral=True,
+            )
+            return False
+        min_required = top_positions[-1]  # lowest of the top 3
+        if interaction.user.top_role.position >= min_required:
+            return True
+        await interaction.response.send_message(
+            "You need a top-tier role (top 3) to use this command.", ephemeral=True,
+        )
+        return False
     return app_commands.check(predicate)
 
 
