@@ -17,6 +17,8 @@ CHAT_CONTEXT: dict[int, dict[int, list[dict]]] = defaultdict(lambda: defaultdict
 MAX_CONTEXT = 20
 
 _client = genai.Client(api_key=AI_API_KEY) if AI_API_KEY else None
+if _client:
+    log.info("Gemini AI client initialized (model: %s)", AI_MODEL)
 
 
 def _to_gemini_history(messages: list[dict]) -> list[genai.types.Content]:
