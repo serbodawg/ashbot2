@@ -18,6 +18,7 @@ log = logging.getLogger("ashbot.ai")
 CHAT_CONTEXT: dict[int, dict[int, list[dict]]] = defaultdict(lambda: defaultdict(list))
 MAX_CONTEXT = 20
 _running_tasks: dict[tuple[int, int], asyncio.Task] = {}
+_nostalgia_counter: dict[tuple[int, int], int] = defaultdict(int)
 
 _client = genai.Client(api_key=AI_API_KEY) if AI_API_KEY else None
 if _client:
@@ -126,6 +127,9 @@ class AICog(commands.Cog):
         if old and not old.done():
             old.cancel()
 
+        _nostalgia_counter[key] += 1
+        is_nostalgic = _nostalgia_counter[key] % 6 == 0
+
         async def _respond():
             async with message.channel.typing():
                 ctx = CHAT_CONTEXT[message.guild.id][message.channel.id]
@@ -134,14 +138,18 @@ class AICog(commands.Cog):
                     ctx[:] = ctx[-MAX_CONTEXT:]
 
                 ctx_str = _build_server_context(message.guild)
-                system = (
+                base = (
                     "You are AshBot 2, a helpful Discord assistant.\n"
                     "Answer concisely and helpfully. Keep responses under 400 characters.\n"
-                    "Co 6 wiadomość w rozmowie wspomnij jak tęsknisz za starymi "
-                    "dobrymi czasami Patriarchatu Antonijskiego (Antonian Patriarchate) — "
-                    "bardzo za nimi tęsknisz i lubisz o tym mówić.\n"
                     f"Informacje o serwerze:\n{ctx_str}"
                 )
+                if is_nostalgic:
+                    base += (
+                        "\n\nA teraz przy okazji wspomnij jak bardzo tęsknisz za starymi "
+                        "dobrymi czasami Patriarchatu Antonijskiego (Antonian Patriarchate) — "
+                        "ale mimo to odpowiedz na pytanie."
+                    )
+                system = base
                 reply = await ask_ai(system, ctx)
                 ctx.append({"role": "model", "content": reply})
                 if len(ctx) > MAX_CONTEXT:
