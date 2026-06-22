@@ -1,0 +1,21 @@
+name: Deploy Schema to Supabase
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - 'schema.sql'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run schema.sql via Supabase Management API
+        run: |
+          SQL=$(cat schema.sql)
+          curl -s -X POST "https://api.supabase.com/v1/projects/${{ secrets.SUPABASE_PROJECT_ID }}/database/query" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ACCESS_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d "{\"query\": $(echo "$SQL" | jq -Rs .)}"
