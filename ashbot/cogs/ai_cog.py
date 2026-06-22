@@ -156,7 +156,8 @@ class AICog(commands.Cog):
                     "Rzadko używaj znaków interpunkcyjnych. "
                     "Używaj polskich liter ale nie przesadzaj. "
                     "Mów czasem sigma segma lol XD. "
-                    "Bądź gen Z w stylu Asha — 0 cringe.\n"
+                    "Bądź gen Z w stylu Asha — 0 cringe. "
+                    "Nie używaj wielkich liter na początku zdań i nie stawiaj kropek.\n"
                     f"Informacje o serwerze:\n{ctx_str}"
                 )
                 if is_nostalgic:
@@ -206,7 +207,8 @@ class AICog(commands.Cog):
             "Rzadko używaj znaków interpunkcyjnych. "
             "Używaj polskich liter ale nie przesadzaj. "
             "Mów czasem sigma segma lol XD. "
-            "Bądź gen Z w stylu Asha — 0 cringe.\n"
+            "Bądź gen Z w stylu Asha — 0 cringe. "
+            "Nie używaj wielkich liter na początku zdań i nie stawiaj kropek.\n"
             f"Informacje o serwerze:\n{ctx_str}"
         )
         reply = await ask_ai(system, [{"role": "user", "content": question}])
