@@ -6,7 +6,7 @@ from collections import defaultdict
 import discord
 from discord import app_commands
 from discord.ext import commands
-import google.generativeai as genai
+from google import genai
 
 from ashbot.models import database as db
 from config import AI_API_KEY, AI_MODEL
@@ -16,35 +16,33 @@ log = logging.getLogger("ashbot.ai")
 CHAT_CONTEXT: dict[int, dict[int, list[dict]]] = defaultdict(lambda: defaultdict(list))
 MAX_CONTEXT = 20
 
-genai.configure(api_key=AI_API_KEY) if AI_API_KEY else None
+_client = genai.Client(api_key=AI_API_KEY) if AI_API_KEY else None
 
 
-def _to_gemini_history(messages: list[dict]) -> list[dict]:
-    history = []
+def _to_gemini_history(messages: list[dict]) -> list[genai.types.Content]:
+    contents = []
     for m in messages:
-        role = "model" if m["role"] == "assistant" else "user"
-        history.append({"role": role, "parts": [m["content"]]})
-    return history
+        role = "model" if m["role"] == "assistant" else m["role"]
+        contents.append({"role": role, "parts": [m["content"]]})
+    return contents
 
 
 async def ask_ai(system_prompt: str, messages: list[dict]) -> str:
-    if not AI_API_KEY:
+    if not AI_API_KEY or not _client:
         return "AI module is not configured. Set AI_API_KEY in .env to enable."
 
     try:
-        model = genai.GenerativeModel(
-            model_name=AI_MODEL,
-            system_instruction=system_prompt,
-        )
-
-        history = _to_gemini_history(messages[:-1]) if len(messages) > 1 else []
+        config = genai.types.GenerateContentConfig(system_instruction=system_prompt)
+        history = _to_gemini_history(messages[:-1]) if len(messages) > 1 else None
         last_msg = messages[-1]["content"] if messages else "Hello"
 
         if history:
-            chat = model.start_chat(history=history)
-            resp = await chat.send_message_async(last_msg)
+            chat = _client.aio.chats.create(model=AI_MODEL, history=history, config=config)
+            resp = await chat.send_message(last_msg)
         else:
-            resp = await model.generate_content_async(last_msg)
+            resp = await _client.aio.models.generate_content(
+                model=AI_MODEL, contents=last_msg, config=config
+            )
 
         return resp.text.strip()
     except Exception as e:
@@ -80,7 +78,7 @@ class AICog(commands.Cog):
                 "Answer concisely and helpfully. Keep responses under 400 characters."
             )
             reply = await ask_ai(system, ctx)
-            ctx.append({"role": "assistant", "content": reply})
+            ctx.append({"role": "model", "content": reply})
             if len(ctx) > MAX_CONTEXT:
                 ctx[:] = ctx[-MAX_CONTEXT:]
 

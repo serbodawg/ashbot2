@@ -22,7 +22,7 @@ def get_db() -> Client:
 async def get_guild_config(guild_id: int) -> dict | None:
     db = get_db()
     resp = db.table("ashbot_guild_config").select("*").eq("guild_id", guild_id).maybe_single().execute()
-    return resp.data
+    return resp.data if resp else None
 
 
 async def set_guild_config(guild_id: int, **kwargs) -> dict:
@@ -33,7 +33,7 @@ async def set_guild_config(guild_id: int, **kwargs) -> dict:
     else:
         kwargs["guild_id"] = guild_id
         resp = db.table("ashbot_guild_config").insert(kwargs).execute()
-    return resp.data[0] if resp.data else {}
+    return resp.data[0] if resp and resp.data else {}
 
 
 # --- Warnings ---
@@ -69,7 +69,7 @@ async def clear_warnings(guild_id: int, user_id: int) -> int:
 async def get_level(guild_id: int, user_id: int) -> dict | None:
     db = get_db()
     resp = db.table("ashbot_levels").select("*").eq("guild_id", guild_id).eq("user_id", user_id).maybe_single().execute()
-    return resp.data
+    return resp.data if resp else None
 
 
 async def add_xp(guild_id: int, user_id: int, xp: int) -> dict:
@@ -118,11 +118,11 @@ async def get_level_roles(guild_id: int) -> list[dict]:
 async def set_level_role(guild_id: int, level: int, role_id: int) -> dict:
     db = get_db()
     existing = db.table("ashbot_level_roles").select("*").eq("guild_id", guild_id).eq("level", level).maybe_single().execute()
-    if existing.data:
+    if existing and existing.data:
         resp = db.table("ashbot_level_roles").update({"role_id": role_id}).eq("guild_id", guild_id).eq("level", level).execute()
     else:
         resp = db.table("ashbot_level_roles").insert({"guild_id": guild_id, "level": level, "role_id": role_id}).execute()
-    return resp.data[0] if resp.data else {}
+    return resp.data[0] if resp and resp.data else {}
 
 
 async def remove_level_role(guild_id: int, level: int) -> bool:
@@ -212,11 +212,11 @@ async def get_log_channels(guild_id: int) -> dict[str, int]:
 async def set_log_channel(guild_id: int, log_type: str, channel_id: int) -> dict:
     db = get_db()
     existing = db.table("ashbot_log_channels").select("*").eq("guild_id", guild_id).eq("log_type", log_type).maybe_single().execute()
-    if existing.data:
+    if existing and existing.data:
         resp = db.table("ashbot_log_channels").update({"channel_id": channel_id}).eq("guild_id", guild_id).eq("log_type", log_type).execute()
     else:
         resp = db.table("ashbot_log_channels").insert({"guild_id": guild_id, "log_type": log_type, "channel_id": channel_id}).execute()
-    return resp.data[0] if resp.data else {}
+    return resp.data[0] if resp and resp.data else {}
 
 
 # --- AI channel settings ---
@@ -230,8 +230,8 @@ async def get_ai_channels(guild_id: int) -> list[int]:
 async def set_ai_channel(guild_id: int, channel_id: int, enabled: bool) -> dict:
     db = get_db()
     existing = db.table("ashbot_ai_channels").select("*").eq("guild_id", guild_id).eq("channel_id", channel_id).maybe_single().execute()
-    if existing.data:
+    if existing and existing.data:
         resp = db.table("ashbot_ai_channels").update({"enabled": enabled}).eq("guild_id", guild_id).eq("channel_id", channel_id).execute()
     else:
         resp = db.table("ashbot_ai_channels").insert({"guild_id": guild_id, "channel_id": channel_id, "enabled": enabled}).execute()
-    return resp.data[0] if resp.data else {}
+    return resp.data[0] if resp and resp.data else {}
