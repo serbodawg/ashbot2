@@ -31,6 +31,7 @@ class AshBot(commands.Bot):
             "ashbot.cogs.protection",
             "ashbot.cogs.backups",
             "ashbot.cogs.logs_cog",
+            "ashbot.cogs.fun_cog",
         ]
 
     async def setup_hook(self) -> None:
