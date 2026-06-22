@@ -50,11 +50,12 @@ class FunCog(commands.Cog):
     ) -> None:
         await interaction.response.defer()
         system = (
-            "You are a matchmaker AI. Given two usernames, create a ship name "
-            "(combine their names creatively), give a compatibility percentage, "
+            "You are a matchmaker AI. Given two usernames, guess their genders based on names, "
+            "then create a ship name (combine their names creatively), "
+            "give a compatibility percentage, "
             "and write a short funny description of their relationship. "
-            "Format:\n**Ship name:** ...\n**Compatibility:** X%\n**Description:** ...\n"
-            "Keep it under 300 characters total. Use Polish language. Be creative and funny."
+            "Format:\n**Ship name:** ...\n**Płeć:** ... i ...\n**Compatibility:** X%\n**Opis:** ...\n"
+            "Keep it under 400 characters total. Use Polish language. Be creative and funny."
         )
         reply = await ask_ai(
             system,
